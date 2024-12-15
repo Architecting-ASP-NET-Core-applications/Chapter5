@@ -1,0 +1,6 @@
+@Chapter5RoutingControllers_HostAddress = http://localhost:5282
+
+GET {{Chapter5RoutingControllers_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,6 @@
+@Chapter5Versioning_HostAddress = http://localhost:7027
+
+GET {{Chapter5Versioning_HostAddress}}/v1/home/
+Accept: application/json
+
+###
