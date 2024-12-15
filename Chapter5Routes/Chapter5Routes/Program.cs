@@ -36,12 +36,15 @@ app.MapRazorComponents<App>()
 app.UseRouting();
 app.UseAntiforgery();
 
+// Example for‚page 3. 
 app.MapControllerRoute(
-name: "default",
-pattern: "{controller=Home}/{action=Index}/{id?}");
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Example for page 4
 //app.MapGet("/", () => "Welcome in Chapter 5!");
 
+// Example for page 5
 //app.UseEndpoints(static endpoints =>
 //  {
 //      // Route configurations
@@ -55,8 +58,25 @@ pattern: "{controller=Home}/{action=Index}/{id?}");
 //            });
 //  });
 
-
+// Example for page 5 and 6
 app.UseMinimalApi();
+
+// Example for page 6
+app.MapControllerRoute(
+    name: "expiration",
+    pattern: "expiration/{year}/{month}/{day}/{category}/{slug}",
+    defaults: new { controller = "Products", action = "Expiration" });
+
+app.MapControllerRoute(
+    name: "products",
+    pattern: "products",
+    defaults: new { controller = "Products", action = "GetAllProducts" });
+
+// Esample for page 8
+app.MapControllerRoute(
+    name: "catchAll",
+    pattern: "api/{**path}",
+    defaults: new { controller = "Error", action = "Handle404" });
 
 app.Run();
 

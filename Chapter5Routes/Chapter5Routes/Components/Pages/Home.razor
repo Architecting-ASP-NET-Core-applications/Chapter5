@@ -16,6 +16,12 @@ Welcome to your new app.
 <button @onclick="()=>DeleteAsync(41)">Delete item 41</button>
 
 
+
+<button @onclick="GetAllProducts">Get all products</button>
+<button @onclick="GetProduct5">Get product 5</button>
+
+<button @onclick="NotFound">Not found</button>
+
 @if (tasks is null)
 {
     if (task is not null)
@@ -33,33 +39,50 @@ else
     </ul>
 }
 
+
+@if (products is not null)
+{
+    <ul>
+        @foreach (var product in products)
+        {
+            <li>@product.Slug - Expires on @product.ExpirationDate</li>
+        }
+    </ul>
+}
+
+@if (product is not null)
+{
+    <div>@product.Slug - Expires on @product.ExpirationDate</div>
+}
+
+
 <p>@message</p>
 
 @code {
     private List<TaskItem>? tasks;
     private TaskItem? task;
     private string message = string.Empty;
+    private List<Product>? products;
+    private Product? product;
 
     // Get all tasks
     public async Task GetAllAsync()
     {
-        message = string.Empty;
+        Clear();
         tasks = await HttpClient.GetFromJsonAsync<List<TaskItem>>("https://localhost:7292/public/tasklist") ?? new List<TaskItem>();
     }
 
     // Get a task by ID
     public async Task GetByIdAsync(int id)
     {
-        message = string.Empty;
-        tasks = null;
+        Clear();
         task = await HttpClient.GetFromJsonAsync<TaskItem>($"https://localhost:7292/public/tasklist/{id}") ?? new TaskItem();
     }
 
     // Create a new task
     public async Task<TaskItem?> CreateAsync()
     {
-        message = string.Empty;
-        tasks = null;
+        Clear();
         TaskItem newTask = new()
             {
                 Description = "This is a new task!",
@@ -73,13 +96,14 @@ else
         {
             _ = GetByIdAsync(51);
         }
-
+        message = "New item created.";
         return null;
     }
 
     // Update an existing task
     public async Task UpdateAsync(int id)
     {
+        Clear();
         await GetByIdAsync(id);
         task = new TaskItem()
             {
@@ -89,7 +113,6 @@ else
                 Title = "Modified title"
             };
 
-        message = string.Empty;
         var response = await HttpClient.PutAsJsonAsync($"https://localhost:7292/public/tasklist/{id}", task);
         message = response.IsSuccessStatusCode ? $"Task with id {id} updated" : $"Task with id {id} was not updated";
     }
@@ -97,9 +120,61 @@ else
     // Delete a task by ID
     public async Task DeleteAsync(int id)
     {
-        message = string.Empty;
+        Clear();
         var response = await HttpClient.DeleteAsync($"https://localhost:7292/public/tasklist/{id}");
         message = response.IsSuccessStatusCode ? "Deleted" : "Not deleted";
     }
 
+    private async Task GetAllProducts()
+    {
+        Clear();
+        products = await HttpClient.GetFromJsonAsync<List<Product>>("https://localhost:7292/products");
+    }
+
+    private async Task GetProduct5()
+    {
+        Clear();
+        product = await HttpClient.GetFromJsonAsync<Product>("https://localhost:7292/expiration/2024/12/6/Category6/Product-5");
+    }
+
+    private async Task NotFound()
+    {
+        Clear();
+        var response = await HttpClient.GetAsync("https://localhost:7292/expiration/2024/12/6/Category6/Product-500");
+        if(response.StatusCode is not System.Net.HttpStatusCode.OK)
+        {
+            var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            if (error is not null)
+            {
+                message = error.Message ?? string.Empty;
+                message += $"\r\n{error.Path}";
+            }
+
+        }
+    }
+
+
+    private void Clear()
+    {
+        product = null;
+        products = null;
+        message = string.Empty;
+        tasks = null;
+    }
+
+    private class Product
+    {
+        public int Id { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string Slug { get; set; } = string.Empty;
+        public DateTime ExpirationDate { get; set; }
+    }
+
+
+    private class ErrorResponse
+    {
+        public string? Message { get; set; }
+        public string? Path { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
 }
