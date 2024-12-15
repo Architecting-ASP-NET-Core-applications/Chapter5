@@ -1,0 +1,105 @@
+﻿@page "/"
+@inject HttpClient HttpClient
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<h2>Try to use Minimal APIs</h2>
+
+<button @onclick="GetAllAsync">Get all</button>
+<button @onclick="()=>GetByIdAsync(4)">Get item 4</button>
+<button @onclick="()=>UpdateAsync(22)">Update item 22</button>
+<button @onclick="CreateAsync">Create new item</button>
+<button @onclick="()=>DeleteAsync(41)">Delete item 41</button>
+
+
+@if (tasks is null)
+{
+    if (task is not null)
+    {
+        <p>@task.Title - Completed: @task.IsCompleted</p>
+    }
+}
+else
+{
+    <ul>
+        @foreach (var task in tasks)
+        {
+            <li>@task.Title - Completed: @task.IsCompleted</li>
+        }
+    </ul>
+}
+
+<p>@message</p>
+
+@code {
+    private List<TaskItem>? tasks;
+    private TaskItem? task;
+    private string message = string.Empty;
+
+    // Get all tasks
+    public async Task GetAllAsync()
+    {
+        message = string.Empty;
+        tasks = await HttpClient.GetFromJsonAsync<List<TaskItem>>("https://localhost:7292/public/tasklist") ?? new List<TaskItem>();
+    }
+
+    // Get a task by ID
+    public async Task GetByIdAsync(int id)
+    {
+        message = string.Empty;
+        tasks = null;
+        task = await HttpClient.GetFromJsonAsync<TaskItem>($"https://localhost:7292/public/tasklist/{id}") ?? new TaskItem();
+    }
+
+    // Create a new task
+    public async Task<TaskItem?> CreateAsync()
+    {
+        message = string.Empty;
+        tasks = null;
+        TaskItem newTask = new()
+            {
+                Description = "This is a new task!",
+                Id = 51,
+                IsCompleted = false,
+                Title = "New task"
+            };
+
+        var response = await HttpClient.PostAsJsonAsync("https://localhost:7292/public/tasklist", newTask);
+        if (response.IsSuccessStatusCode)
+        {
+            _ = GetByIdAsync(51);
+        }
+
+        return null;
+    }
+
+    // Update an existing task
+    public async Task UpdateAsync(int id)
+    {
+        await GetByIdAsync(id);
+        task = new TaskItem()
+            {
+                Description = "Modified task!",
+                Id = id,
+                IsCompleted = false,
+                Title = "Modified title"
+            };
+
+        message = string.Empty;
+        var response = await HttpClient.PutAsJsonAsync($"https://localhost:7292/public/tasklist/{id}", task);
+        message = response.IsSuccessStatusCode ? $"Task with id {id} updated" : $"Task with id {id} was not updated";
+    }
+
+    // Delete a task by ID
+    public async Task DeleteAsync(int id)
+    {
+        message = string.Empty;
+        var response = await HttpClient.DeleteAsync($"https://localhost:7292/public/tasklist/{id}");
+        message = response.IsSuccessStatusCode ? "Deleted" : "Not deleted";
+    }
+
+}
